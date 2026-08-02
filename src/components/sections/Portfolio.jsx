@@ -53,7 +53,7 @@ export function Portfolio() {
                 onClick={() => setActiveId(project.id)}
                 className="group flex h-full w-full flex-col overflow-hidden rounded-xl border border-line bg-ink-100 text-left transition-colors duration-500 hover:border-line-strong"
                 data-cursor
-                data-cursor-label="ver projeto"
+                data-cursor-label="Ver"
               >
                 <ProjectCover
                   project={project}

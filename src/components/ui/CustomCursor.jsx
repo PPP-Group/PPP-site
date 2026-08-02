@@ -93,7 +93,7 @@ export function CustomCursor() {
         ].join(' ')}
       >
         {label && (
-          <span className="font-mono text-[9.5px] uppercase tracking-[0.14em] text-volt">
+          <span className="font-mono text-[9.5px] uppercase tracking-[0.14em] text-volt text-center leading-tight">
             {label}
           </span>
         )}
