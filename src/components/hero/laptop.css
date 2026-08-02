@@ -1,0 +1,563 @@
+/* ==========================================================================
+   Notebook 3D do hero.
+
+   Geometria em CSS 3D, não WebGL: a tela é DOM de verdade, então o painel
+   fica nítido em qualquer zoom, herda os tokens do site e custa poucos
+   quilobytes. Um canvas 3D traria ~150 kB só para exibir um dashboard que já
+   sabemos desenhar em HTML.
+
+   Tampa e base são CAIXAS DE SEIS FACES, não planos. Um plano em CSS 3D não
+   tem verso nem espessura: girando o objeto você atravessa a tela e vê o
+   próprio painel espelhado do outro lado. Cada corpo aqui tem frente, verso e
+   quatro arestas, e a face da frente usa `backface-visibility: hidden` para
+   sumir assim que vira de costas.
+   ========================================================================== */
+
+.lp-scene {
+  --lp-w: 380px;
+  --lp-rx: -7deg; /* pose inicial: já correta antes de o JS entrar */
+  --lp-ry: -21deg;
+  --lp-glare: 0.35;
+
+  /* Espessura dos corpos, proporcional à largura para não engordar nem
+     afinar conforme o notebook muda de escala. A base é mais grossa que a
+     tampa, como em qualquer notebook real. */
+  --lid-d: calc(var(--lp-w) * 0.024);
+  --deck-d: calc(var(--lp-w) * 0.042);
+
+  position: relative;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  perspective: 1500px;
+  perspective-origin: 50% 42%;
+
+  /* Transform 3D não encolhe a caixa de layout: a base, deitada a 76°, ocupa
+     ~25% da própria altura na tela mas continua reservando 40% de `--lp-w`.
+     Sem esta compensação sobra um vão morto embaixo — que desalinha a
+     centralização vertical e, pior, larga a sombra longe do objeto. */
+  margin-bottom: calc(var(--lp-w) * -0.2);
+}
+
+/* Flutuação. Fica numa camada própria para não brigar com a rotação do mouse,
+   que escreve transform no elemento de dentro. */
+.lp-float {
+  transform-style: preserve-3d;
+  animation: lp-float 9s ease-in-out infinite;
+}
+
+@keyframes lp-float {
+  0%,
+  100% {
+    transform: translate3d(0, -7px, 0);
+  }
+  50% {
+    transform: translate3d(0, 9px, 0);
+  }
+}
+
+.lp-body {
+  transform-style: preserve-3d;
+  transform: rotateX(var(--lp-rx)) rotateY(var(--lp-ry));
+  cursor: grab;
+  touch-action: pan-y; /* arrastar na vertical continua rolando a página */
+}
+
+.lp-body:active {
+  cursor: grabbing;
+}
+
+/* ==========================================================================
+   Faces genéricas de uma caixa W × H × D.
+
+   Cada corpo declara --w, --h, --d e --r (raio do canto). As faces laterais
+   precisam de --w e --h em pixels porque `translateZ` não aceita porcentagem —
+   não dá para escrever translateZ(50%).
+
+   Duas decisões que fazem a diferença entre "notebook" e "caixa de papelão":
+
+   1. As arestas são RECUADAS por --r em vez de correrem a largura inteira.
+      Como a frente e o verso têm cantos arredondados, uma aresta de ponta a
+      ponta ultrapassa a curva e aparece como uma aba quadrada saliente. É essa
+      aba que dá o aspecto de bloco.
+
+   2. O gradiente das arestas é cilíndrico (escuro nas bordas, claro no meio).
+      Uma faixa de cor chapada lê como corte reto; a banda de luz no meio lê
+      como chanfro arredondado, que é o que qualquer notebook tem.
+   ========================================================================== */
+
+.lp-face {
+  position: absolute;
+  border-radius: calc(var(--d) / 2);
+}
+
+/* --------------------------------------------------------------------------
+   Fatias de casco — o que fecha os cantos.
+
+   As arestas terminam onde a curva do canto começa, então a região do canto
+   fica sem face nenhuma: um quarto de cilindro que `div` plana não consegue
+   desenhar. Sem isso dá para ver ATRAVÉS do canto.
+
+   A saída é extrudar por fatiamento: planos opacos com o mesmo contorno
+   arredondado, distribuídos ao longo da espessura. Como são opacos e do
+   tamanho do corpo, cada um oculta o que está atrás — de qualquer ângulo
+   diferente de exatamente de perfil, o canto lê como material sólido com a
+   silhueta certa. Nos trechos retos elas ficam escondidas atrás das arestas.
+
+   Recuadas em 0,5px para nunca disputarem o mesmo plano das faces da frente e
+   do verso, o que causaria cintilação de z-fighting.
+   -------------------------------------------------------------------------- */
+.lp-shell {
+  position: absolute;
+  inset: 0.5px;
+  border-radius: var(--r);
+  background: linear-gradient(170deg, #1a1a28 0%, #101019 58%, #0a0a11 100%);
+  /* z = d/2 − (i + 0,5) · d/5, ou seja 0,4d · 0,2d · 0 · −0,2d · −0,4d.
+     Evita cair exatamente sobre a frente ou o verso. */
+  transform: translateZ(calc(var(--d) * (0.4 - 0.2 * var(--i))));
+}
+
+/* Aresta de cima e de baixo: W de largura, D de profundidade. */
+.lp-face-t,
+.lp-face-b {
+  left: var(--r);
+  top: 50%;
+  width: calc(var(--w) - var(--r) * 2);
+  height: var(--d);
+  margin-top: calc(var(--d) / -2);
+  background: linear-gradient(
+    180deg,
+    #0c0c13 0%,
+    #262639 40%,
+    #1f1f30 62%,
+    #0a0a10 100%
+  );
+}
+.lp-face-t {
+  transform: rotateX(90deg) translateZ(calc(var(--h) / 2));
+}
+.lp-face-b {
+  transform: rotateX(-90deg) translateZ(calc(var(--h) / 2));
+}
+
+/* Arestas laterais: D de largura, H de altura. */
+.lp-face-l,
+.lp-face-r {
+  top: var(--r);
+  left: 50%;
+  width: var(--d);
+  height: calc(var(--h) - var(--r) * 2);
+  margin-left: calc(var(--d) / -2);
+  background: linear-gradient(
+    90deg,
+    #0b0b11 0%,
+    #232336 42%,
+    #1c1c2b 60%,
+    #09090f 100%
+  );
+}
+.lp-face-l {
+  transform: rotateY(-90deg) translateZ(calc(var(--w) / 2));
+}
+.lp-face-r {
+  transform: rotateY(90deg) translateZ(calc(var(--w) / 2));
+}
+
+/* ==========================================================================
+   Tampa
+   ========================================================================== */
+
+.lp-lid {
+  --w: var(--lp-w);
+  --h: calc(var(--lp-w) * 0.625); /* 16:10 */
+  --d: var(--lid-d);
+  /* Raio uniforme nos quatro cantos, e é ele que define o recuo das arestas.
+     Com raios diferentes por canto, um único recuo deixaria aba num canto e
+     fresta no outro. */
+  --r: calc(var(--lp-w) * 0.022);
+
+  position: relative;
+  width: var(--w);
+  height: var(--h);
+  margin: 0 auto;
+  transform-origin: 50% 100%;
+  transform: rotateX(-9deg);
+  transform-style: preserve-3d;
+}
+
+/* Frente: moldura + tela. `transform-style: flat` (padrão) achata o painel
+   inteiro nesta face, então esconder o verso dela esconde o conteúdo junto —
+   é o que impede o dashboard de aparecer espelhado por trás. */
+.lp-lid-front {
+  position: absolute;
+  inset: 0;
+  padding: 9px 9px 15px;
+  transform: translateZ(calc(var(--d) / 2));
+  backface-visibility: hidden;
+  border-radius: var(--r);
+  border: 1px solid var(--color-line-strong);
+  background: linear-gradient(168deg, #1c1c29 0%, #101019 55%, #0b0b12 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07);
+}
+
+/* Verso: a capa. É o que se vê ao girar o notebook de costas. */
+.lp-lid-cover {
+  position: absolute;
+  inset: 0;
+  transform: rotateY(180deg) translateZ(calc(var(--d) / 2));
+  border-radius: var(--r);
+  border: 1px solid #26263a;
+  background:
+    linear-gradient(200deg, #1d1d2c 0%, #131320 52%, #0d0d15 100%),
+    var(--color-ink-100);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  display: grid;
+  place-items: center;
+}
+
+/* Marca gravada na capa. Só aparece quando alguém gira o notebook — que é
+   exatamente quando um detalhe assim compensa. */
+.lp-lid-mark {
+  width: 26%;
+  opacity: 0.5;
+}
+
+.lp-cam {
+  position: absolute;
+  top: 4px;
+  left: 50%;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--color-line-strong);
+  transform: translateX(-50%);
+}
+
+.lp-screen {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  border-radius: 6px;
+  background: var(--color-ink-000);
+  display: flex;
+  flex-direction: column;
+}
+
+/* Reflexo. A intensidade vem do JS conforme o ângulo — é o que vende a
+   sensação de superfície de vidro girando. */
+.lp-screen::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(104deg, rgba(255, 255, 255, 0.14) 0%, transparent 42%);
+  opacity: var(--lp-glare);
+  transition: opacity 0.2s linear;
+}
+
+.lp-chin {
+  position: absolute;
+  bottom: 3px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: var(--font-mono);
+  font-size: 7px;
+  letter-spacing: 0.24em;
+  color: var(--color-line-strong);
+}
+
+/* ==========================================================================
+   Base
+   ========================================================================== */
+
+.lp-deck {
+  --w: calc(var(--lp-w) * 1.018);
+  --h: calc(var(--lp-w) * 0.4);
+  --d: var(--deck-d);
+  --r: calc(var(--lp-w) * 0.026);
+
+  position: relative;
+  width: var(--w);
+  height: var(--h);
+  margin: -1px auto 0;
+  transform-origin: 50% 0%;
+  transform: rotateX(76deg);
+  transform-style: preserve-3d;
+}
+
+/* Face de cima: o teclado. */
+.lp-deck-top {
+  position: absolute;
+  inset: 0;
+  padding: 14px 26px;
+  transform: translateZ(calc(var(--d) / 2));
+  backface-visibility: hidden;
+  border-radius: var(--r);
+  border: 1px solid var(--color-line-strong);
+  border-top-color: #2a2a3d;
+  background: linear-gradient(180deg, #16161f 0%, #101018 40%, #0a0a10 100%);
+}
+
+/* Face de baixo. Sem ela dava para ver o teclado por dentro, de baixo. */
+.lp-deck-bottom {
+  position: absolute;
+  inset: 0;
+  transform: rotateY(180deg) translateZ(calc(var(--d) / 2));
+  border-radius: var(--r);
+  border: 1px solid #232335;
+  background: linear-gradient(180deg, #14141f 0%, #0d0d16 60%, #08080e 100%);
+}
+
+/* Entrada de ar e pés de borracha: o que se vê virando o notebook de cabeça
+   para baixo. */
+.lp-vent {
+  position: absolute;
+  top: 16%;
+  left: 50%;
+  width: 46%;
+  height: 5px;
+  transform: translateX(-50%);
+  border-radius: 3px;
+  background: repeating-linear-gradient(90deg, #1e1e2e 0 3px, transparent 3px 6px);
+}
+
+.lp-foot {
+  position: absolute;
+  width: 7%;
+  height: 5px;
+  border-radius: 3px;
+  background: #05050a;
+}
+.lp-foot:nth-of-type(1) {
+  top: 12%;
+  left: 8%;
+}
+.lp-foot:nth-of-type(2) {
+  top: 12%;
+  right: 8%;
+}
+.lp-foot:nth-of-type(3) {
+  bottom: 10%;
+  left: 8%;
+}
+.lp-foot:nth-of-type(4) {
+  bottom: 10%;
+  right: 8%;
+}
+
+.lp-keys {
+  display: grid;
+  gap: 4px;
+}
+
+.lp-keyrow {
+  display: flex;
+  gap: 4px;
+  justify-content: center;
+}
+
+.lp-key {
+  height: 9px;
+  flex: 1;
+  border-radius: 2px;
+  background: #1e1e2b;
+  box-shadow: inset 0 -1px 0 rgba(0, 0, 0, 0.6);
+}
+
+.lp-key.wide {
+  flex: 5;
+}
+
+.lp-pad {
+  width: 34%;
+  height: 30%;
+  margin: 12px auto 0;
+  border-radius: 5px;
+  background: #14141d;
+  border: 1px solid #22222f;
+}
+
+/* ==========================================================================
+   Sombra projetada
+   ========================================================================== */
+
+/* Vive fora do contexto 3D para não girar junto. Ancorada pelo topo, não pelo
+   rodapé da cena: a base termina a ~0,83 × `--lp-w` do topo, bem antes do fim
+   da caixa de layout. Presa ao rodapé, a sombra ficava longe do objeto. */
+.lp-shadow {
+  position: absolute;
+  top: calc(var(--lp-w) * 0.78);
+  left: 50%;
+  width: calc(var(--lp-w) * 0.92);
+  height: 34px;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.75), transparent 68%);
+  filter: blur(11px);
+  animation: lp-shadow 9s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes lp-shadow {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: translateX(-50%) scale(0.94);
+  }
+  50% {
+    opacity: 0.8;
+    transform: translateX(-50%) scale(1.04);
+  }
+}
+
+/* ==========================================================================
+   Painel na tela
+   ========================================================================== */
+
+.lp-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 9px;
+  border-bottom: 1px solid var(--color-line);
+  flex: none;
+}
+
+.lp-dots {
+  display: flex;
+  gap: 3.5px;
+}
+
+.lp-dots i {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--color-line-strong);
+}
+
+.lp-bar span {
+  font-family: var(--font-mono);
+  font-size: 7.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-faint);
+  margin-left: auto;
+}
+
+.lp-top {
+  display: grid;
+  grid-template-columns: 1fr 1.25fr;
+  gap: 9px;
+  padding: 10px 9px 8px;
+  align-items: end;
+  flex: none;
+}
+
+.lp-metric b {
+  display: block;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-stretch: 108%;
+  font-size: 27px;
+  line-height: 0.9;
+  letter-spacing: -0.03em;
+  color: var(--color-paper);
+}
+
+.lp-metric span {
+  display: block;
+  margin-top: 4px;
+  font-family: var(--font-mono);
+  font-size: 6.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-faint);
+}
+
+.lp-spark {
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 34px;
+}
+
+.lp-spark i {
+  flex: 1;
+  border-radius: 1.5px 1.5px 0 0;
+  background: var(--color-pulse);
+  opacity: 0.55;
+}
+
+.lp-spark i:last-child {
+  background: var(--color-volt);
+  opacity: 1;
+}
+
+.lp-log {
+  border-top: 1px solid var(--color-line);
+  padding: 3px 9px 0;
+  flex: 1;
+  min-height: 0;
+}
+
+.lp-log div {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4.5px 0;
+  border-bottom: 1px solid rgba(34, 34, 47, 0.6);
+  font-family: var(--font-mono);
+  font-size: 7px;
+  letter-spacing: 0.04em;
+  color: var(--color-muted);
+}
+
+.lp-log div:last-child {
+  border-bottom: 0;
+}
+
+.lp-log i {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--color-ok);
+  flex: none;
+}
+
+.lp-log em {
+  font-style: normal;
+  margin-left: auto;
+  color: var(--color-faint);
+}
+
+/* ==========================================================================
+   Movimento reduzido
+   Sem flutuação e sem seguir o ponteiro. Girar arrastando continua valendo:
+   é ação direta do usuário, não movimento imposto a ele.
+   ========================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  .lp-float,
+  .lp-shadow {
+    animation: none;
+  }
+}
+
+/* ==========================================================================
+   Escala
+   A coluna direita tem ~482px no lg. A base é ~2% mais larga que a tampa e
+   ainda ganha largura na projeção, então a tampa fica bem abaixo da coluna.
+   ========================================================================== */
+
+@media (min-width: 1280px) {
+  .lp-scene {
+    --lp-w: 420px;
+  }
+}
+
+@media (min-width: 1536px) {
+  .lp-scene {
+    --lp-w: 460px;
+  }
+}

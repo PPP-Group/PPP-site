@@ -1,0 +1,157 @@
+/* ==========================================================================
+   Grafo de workflow — o elemento-assinatura.
+   Nenhum brilho difuso: o estado "aceso" é comunicado por borda, contraste de
+   rótulo e a impressão do log. Um nó aceso parece um nó que executou, não um
+   nó iluminado.
+   ========================================================================== */
+
+.graph {
+  width: 100%;
+  height: auto;
+  display: block;
+  overflow: visible;
+}
+
+/* --- Arestas -------------------------------------------------------------- */
+
+.graph-edge {
+  fill: none;
+  stroke: var(--color-line-strong);
+  stroke-width: 1.5;
+}
+
+/* Camada por cima da aresta apagada: é ela que "desenha" conforme o pacote anda. */
+.graph-edge-live {
+  fill: none;
+  stroke: url(#ppp-current);
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
+.graph-edge-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  fill: var(--color-faint);
+  text-anchor: middle;
+  paint-order: stroke;
+  stroke: var(--color-ink-000);
+  stroke-width: 5px;
+  stroke-linejoin: round;
+}
+
+/* --- Nós ------------------------------------------------------------------ */
+
+.graph-node rect {
+  fill: var(--color-ink-200);
+  stroke: var(--color-line);
+  stroke-width: 1.25;
+  transition:
+    stroke 0.35s var(--ease-out-soft),
+    fill 0.35s var(--ease-out-soft);
+}
+
+.graph-node-label {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  letter-spacing: 0.02em;
+  fill: var(--color-faint);
+  dominant-baseline: middle;
+  transition: fill 0.35s var(--ease-out-soft);
+}
+
+.graph-node-dot {
+  fill: var(--color-line-strong);
+  transition: fill 0.35s var(--ease-out-soft);
+}
+
+/* O log só existe depois que o nó executou — é a saída daquela etapa. */
+.graph-node-log {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.02em;
+  fill: var(--color-ok);
+  opacity: 0;
+  transform: translateY(-4px);
+  transition:
+    opacity 0.4s var(--ease-out-soft),
+    transform 0.4s var(--ease-out-soft);
+}
+
+.graph-node.is-lit rect {
+  fill: var(--color-ink-300);
+}
+.graph-node.is-lit .graph-node-label {
+  fill: var(--color-paper);
+}
+.graph-node.is-lit .graph-node-log {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Tom por tipo de nó. Só aparece depois que o nó executa. */
+.graph-node.is-lit[data-kind='trigger'] rect,
+.graph-node.is-lit[data-kind='trigger'] .graph-node-dot {
+  stroke: var(--color-volt);
+  fill: var(--color-volt);
+}
+.graph-node.is-lit[data-kind='trigger'] rect {
+  fill: var(--color-ink-300);
+}
+
+.graph-node.is-lit[data-kind='ai'] rect {
+  stroke: var(--color-pulse);
+}
+.graph-node.is-lit[data-kind='ai'] .graph-node-dot {
+  fill: var(--color-pulse-soft);
+}
+
+.graph-node.is-lit[data-kind='action'] rect {
+  stroke: var(--color-line-strong);
+}
+.graph-node.is-lit[data-kind='action'] .graph-node-dot {
+  fill: var(--color-muted);
+}
+
+.graph-node.is-lit[data-kind='sink'] rect {
+  stroke: var(--color-ok);
+}
+.graph-node.is-lit[data-kind='sink'] .graph-node-dot {
+  fill: var(--color-ok);
+}
+
+/* --- Pacote --------------------------------------------------------------- */
+
+.graph-packet {
+  opacity: 0;
+  transition: opacity 0.18s linear;
+}
+
+.graph-packet-core {
+  fill: var(--color-volt);
+}
+
+.graph-packet-halo {
+  fill: var(--color-volt);
+  opacity: 0.18;
+}
+
+/* --- Fallback estático ----------------------------------------------------
+   Sem movimento, o grafo vira um diagrama completo: todas as arestas
+   desenhadas, todos os nós com sua saída impressa.
+   -------------------------------------------------------------------------- */
+
+.graph.is-static .graph-edge-live {
+  stroke-dasharray: none !important;
+  stroke-dashoffset: 0 !important;
+}
+
+.graph.is-static .graph-packet {
+  display: none;
+}
+
+.graph.is-static .graph-node-log,
+.graph.is-static .graph-node rect,
+.graph.is-static .graph-node-label {
+  transition: none;
+}

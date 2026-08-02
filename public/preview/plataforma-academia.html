@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <title>Painel de gestão — projeto de exemplo</title>
+    <!--
+      PÁGINA DE EXEMPLO.
+
+      Serve para o modal de portfólio do site da PPP ter um preview real e
+      navegável enquanto os projetos definitivos não entram. Ela é
+      deliberadamente de outra linguagem visual (clara, densa, utilitária) para
+      ler como produto de um cliente, não como uma segunda página da PPP.
+
+      Substituir: em src/data/portfolio.js, troque `liveUrl` pela URL real do
+      projeto e apague este arquivo.
+    -->
+    <style>
+      *,
+      *::before,
+      *::after { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+        background: #f4f5f7;
+        color: #1c2230;
+        font-size: 14px;
+      }
+      .app { display: grid; grid-template-columns: 208px 1fr; min-height: 100vh; }
+      .side { background: #131a2a; color: #cfd6e4; padding: 22px 16px; }
+      .brand { display: flex; align-items: center; gap: 9px; font-weight: 700; color: #fff; letter-spacing: -0.02em; }
+      .brand i { width: 22px; height: 22px; border-radius: 6px; background: #2f6bff; display: grid; place-items: center; font-style: normal; font-size: 12px; }
+      .side nav { margin-top: 26px; display: grid; gap: 3px; }
+      .side a { display: flex; align-items: center; gap: 9px; padding: 9px 11px; border-radius: 7px; color: #9aa5bd; text-decoration: none; font-size: 13px; }
+      .side a.on, .side a:hover { background: #1e2740; color: #fff; }
+      .side .tag { margin-top: 28px; padding: 12px; border-radius: 9px; background: #1b2438; font-size: 11.5px; line-height: 1.5; color: #93a0bb; }
+
+      main { padding: 22px 26px 40px; }
+      .top { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+      h1 { font-size: 20px; margin: 0; letter-spacing: -0.02em; }
+      .sub { margin: 4px 0 0; color: #6b7488; font-size: 12.5px; }
+      .btn { background: #2f6bff; color: #fff; border: 0; border-radius: 8px; padding: 9px 15px; font-size: 12.5px; font-weight: 600; cursor: pointer; }
+      .btn.sec { background: #fff; color: #1c2230; border: 1px solid #dde1e9; }
+
+      .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 20px; }
+      .card { background: #fff; border: 1px solid #e5e8ee; border-radius: 11px; padding: 15px; }
+      .kpi b { display: block; font-size: 24px; letter-spacing: -0.03em; }
+      .kpi span { display: block; color: #6b7488; font-size: 11.5px; margin-top: 3px; }
+      .kpi em { font-style: normal; font-size: 11px; font-weight: 600; }
+      .up { color: #12945f; } .down { color: #c4423f; }
+
+      .grid2 { display: grid; grid-template-columns: 1.55fr 1fr; gap: 12px; margin-top: 12px; align-items: start; }
+      h2 { font-size: 13.5px; margin: 0 0 12px; letter-spacing: -0.01em; }
+      table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+      th { text-align: left; color: #6b7488; font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; padding-bottom: 9px; border-bottom: 1px solid #eceff4; }
+      td { padding: 10px 0; border-bottom: 1px solid #f3f5f8; }
+      .pill { display: inline-block; padding: 2.5px 8px; border-radius: 99px; font-size: 11px; font-weight: 600; }
+      .ok { background: #e4f6ed; color: #12945f; }
+      .late { background: #fdeceb; color: #c4423f; }
+      .wait { background: #fff3df; color: #a2691b; }
+
+      .bars { display: flex; align-items: flex-end; gap: 8px; height: 128px; margin-top: 6px; }
+      .bars div { flex: 1; background: #dfe7fb; border-radius: 4px 4px 0 0; position: relative; }
+      .bars div:nth-child(6) { background: #2f6bff; }
+      .bars span { position: absolute; bottom: -19px; left: 0; right: 0; text-align: center; font-size: 10px; color: #8791a5; }
+
+      .flow { margin-top: 12px; font-size: 12px; color: #4b5468; line-height: 1.6; }
+      .flow code { background: #eef1f6; padding: 1.5px 5px; border-radius: 4px; font-size: 11.5px; }
+
+      @media (max-width: 860px) {
+        .app { grid-template-columns: 1fr; }
+        .side { display: none; }
+        .kpis { grid-template-columns: repeat(2, 1fr); }
+        .grid2 { grid-template-columns: 1fr; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <aside class="side">
+        <div class="brand"><i>▲</i> Gestão</div>
+        <nav>
+          <a class="on" href="#painel">Painel</a>
+          <a href="#alunos">Alunos</a>
+          <a href="#planos">Planos</a>
+          <a href="#frequencia">Frequência</a>
+          <a href="#financeiro">Financeiro</a>
+          <a href="#automacoes">Automações</a>
+        </nav>
+        <p class="tag">
+          Projeto de exemplo. Os dados desta tela são fictícios e servem apenas
+          para demonstrar o preview navegável no portfólio.
+        </p>
+      </aside>
+
+      <main id="painel">
+        <div class="top">
+          <div>
+            <h1>Painel da unidade Centro</h1>
+            <p class="sub">Atualizado há 2 minutos · sincronizado com o CRM</p>
+          </div>
+          <div style="display: flex; gap: 8px">
+            <button class="btn sec">Exportar</button>
+            <button class="btn">Nova matrícula</button>
+          </div>
+        </div>
+
+        <div class="kpis">
+          <div class="card kpi"><b>1.284</b><span>Alunos ativos</span><em class="up">▲ 4,2%</em></div>
+          <div class="card kpi"><b>73</b><span>Matrículas no mês</span><em class="up">▲ 11%</em></div>
+          <div class="card kpi"><b>41</b><span>Inadimplentes</span><em class="down">▼ 6</em></div>
+          <div class="card kpi"><b>68%</b><span>Frequência média</span><em class="up">▲ 2,1%</em></div>
+        </div>
+
+        <div class="grid2">
+          <section class="card" id="alunos">
+            <h2>Matrículas recentes</h2>
+            <table>
+              <thead>
+                <tr><th>Aluno</th><th>Plano</th><th>Avaliação</th><th>Status</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>A. Ribeiro</td><td>Anual</td><td>Ter, 09:00</td><td><span class="pill ok">Ativo</span></td></tr>
+                <tr><td>C. Nogueira</td><td>Mensal</td><td>Qua, 18:30</td><td><span class="pill wait">Aguardando</span></td></tr>
+                <tr><td>D. Falcão</td><td>Trimestral</td><td>Agendando</td><td><span class="pill ok">Ativo</span></td></tr>
+                <tr><td>E. Santoro</td><td>Mensal</td><td>—</td><td><span class="pill late">Em atraso</span></td></tr>
+                <tr><td>F. Aguiar</td><td>Anual</td><td>Qui, 07:15</td><td><span class="pill ok">Ativo</span></td></tr>
+              </tbody>
+            </table>
+          </section>
+
+          <section class="card" id="frequencia">
+            <h2>Frequência por dia</h2>
+            <div class="bars">
+              <div style="height: 46%"><span>Seg</span></div>
+              <div style="height: 62%"><span>Ter</span></div>
+              <div style="height: 54%"><span>Qua</span></div>
+              <div style="height: 78%"><span>Qui</span></div>
+              <div style="height: 66%"><span>Sex</span></div>
+              <div style="height: 92%"><span>Sáb</span></div>
+              <div style="height: 30%"><span>Dom</span></div>
+            </div>
+          </section>
+        </div>
+
+        <section class="card" id="automacoes" style="margin-top: 12px">
+          <h2>Automações ligadas a este painel</h2>
+          <p class="flow">
+            <code>nova matrícula</code> → sincroniza contato no CRM → agenda avaliação física →
+            devolve o status para esta tela.<br />
+            <code>pagamento em atraso 3 dias</code> → sequência de cobrança por WhatsApp →
+            move o negócio no pipeline de retenção.
+          </p>
+        </section>
+      </main>
+    </div>
+  </body>
+</html>

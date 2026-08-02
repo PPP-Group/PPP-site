@@ -1,0 +1,461 @@
+@import 'tailwindcss';
+
+/* ==========================================================================
+   PPP — sistema de design
+   Base: canvas de editor de workflow. Tinta quase preta com viés violeta,
+   hairlines em vez de sombras, e uma "corrente" (indigo -> ciano) que só
+   aparece onde algo está de fato transportando um dado.
+   ========================================================================== */
+
+@theme {
+  /* --- Tinta ------------------------------------------------------------ */
+  --color-ink-000: #07070c; /* fundo da página */
+  --color-ink-050: #0a0a11; /* faixa alternada de seção */
+  --color-ink-100: #0e0e17; /* superfície elevada */
+  --color-ink-200: #13131e; /* card */
+  --color-ink-300: #1a1a28; /* card em hover */
+  --color-line: #22222f; /* hairline padrão */
+  --color-line-strong: #2e2e42; /* hairline em destaque */
+
+  /* --- Texto ------------------------------------------------------------ */
+  --color-paper: #ececf3;
+  --color-muted: #9a9ab0; /* 7.2:1 sobre ink-000 */
+  --color-faint: #7c7c96; /* 4.8:1 sobre ink-000 — piso AA */
+
+  /* --- Corrente (acentos) ----------------------------------------------- */
+  --color-pulse: #6a5ae0; /* indigo — gráficos e bordas */
+  --color-pulse-soft: #9b8eff; /* indigo claro — texto sobre tinta */
+  --color-volt: #3fd8e6; /* ciano — sinal ativo */
+  --color-flare: #e0479a; /* magenta — reservado ao CTA final */
+  --color-ok: #43d18e; /* verde — status de execução, nunca marca */
+
+  /* --- Tipografia ------------------------------------------------------- */
+  --font-display: 'Archivo Variable', 'Archivo', system-ui, sans-serif;
+  --font-body: 'Hanken Grotesk Variable', 'Hanken Grotesk', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono Variable', 'JetBrains Mono', ui-monospace, monospace;
+
+  /* --- Movimento -------------------------------------------------------- */
+  --ease-out-soft: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out-soft: cubic-bezier(0.65, 0, 0.35, 1);
+}
+
+/* Variáveis fora do @theme: usadas em CSS bruto, não precisam virar utilitário. */
+:root {
+  --current: linear-gradient(100deg, #6a5ae0 0%, #3fd8e6 100%);
+  --current-flare: linear-gradient(100deg, #6a5ae0 0%, #e0479a 100%);
+  --shell: min(1240px, 100% - 2.5rem);
+  --header-h: 72px;
+}
+
+/* ==========================================================================
+   Base
+   ========================================================================== */
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  html {
+    /* Lenis assume o controle da rolagem; o fallback nativo cobre reduced-motion
+       e o caso de a lib não carregar. */
+    scroll-behavior: smooth;
+    scroll-padding-top: calc(var(--header-h) + 16px);
+    -webkit-text-size-adjust: 100%;
+  }
+
+  html.lenis,
+  html.lenis body {
+    height: auto;
+  }
+  .lenis.lenis-smooth {
+    scroll-behavior: auto !important;
+  }
+
+  body {
+    margin: 0;
+    background: var(--color-ink-000);
+    color: var(--color-paper);
+    font-family: var(--font-body);
+    font-size: 1rem;
+    line-height: 1.6;
+    font-synthesis-weight: none;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    overflow-x: hidden;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    line-height: 0.98;
+    letter-spacing: -0.03em;
+    text-wrap: balance;
+    margin: 0;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  ::selection {
+    background: var(--color-pulse);
+    color: #fff;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-volt);
+    outline-offset: 3px;
+    border-radius: 3px;
+  }
+
+  /* Só some com o cursor do sistema onde o cursor customizado realmente roda:
+     ponteiro fino e usuário sem preferência por menos movimento. */
+  @media (pointer: fine) {
+    html.has-custom-cursor,
+    html.has-custom-cursor * {
+      cursor: none;
+    }
+  }
+
+  img,
+  svg,
+  video,
+  iframe {
+    max-width: 100%;
+  }
+
+  /* --- Barra de rolagem --------------------------------------------------
+     Mesma lógica do resto do site: hairline em repouso, corrente só quando a
+     mão está nela. O trilho fica transparente para herdar a tinta da
+     superfície (página em ink-000, painéis em ink-200). */
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-line-strong);
+    border: 2px solid transparent; /* vira respiro: 6px visíveis dentro de 10px */
+    background-clip: padding-box;
+    border-radius: 999px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: color-mix(in oklab, var(--color-pulse) 45%, var(--color-line-strong));
+    background-clip: padding-box;
+  }
+
+  ::-webkit-scrollbar-thumb:active {
+    background: var(--color-pulse);
+    background-clip: padding-box;
+  }
+
+  ::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+
+  /* Firefox não tem os pseudo-elementos acima; e no Chrome 121+ definir
+     `scrollbar-color` desligaria todo o bloco WebKit. Daí o @supports. */
+  @supports not selector(::-webkit-scrollbar) {
+    html {
+      scrollbar-width: thin;
+      scrollbar-color: var(--color-line-strong) transparent;
+    }
+  }
+}
+
+/* ==========================================================================
+   Utilitários de composição
+   ========================================================================== */
+
+@layer components {
+  .shell {
+    width: var(--shell);
+    margin-inline: auto;
+  }
+
+  /* Malha de canvas: o site inteiro se apoia numa grade de editor de nós. */
+  .canvas-grid {
+    background-image: radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.055) 1px, transparent 0);
+    background-size: 26px 26px;
+  }
+
+  .hairline {
+    border: 1px solid var(--color-line);
+  }
+
+  /* Rótulo em mono: o vernáculo do assunto (logs, ids, chaves). */
+  .eyebrow {
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    font-weight: 500;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--color-faint);
+  }
+
+  /* Título de seção. O eixo de largura da Archivo faz o trabalho de presença
+     que normalmente se pediria a um gradiente. */
+  .display {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-stretch: 112%;
+    letter-spacing: -0.035em;
+    line-height: 0.95;
+  }
+
+  /* Teto de 5.6rem não é gosto, é medida: a coluna do título tem ~694px
+     (limite da shell) e "Estruturamos a" ocupa 7,74em. Acima de 89,6px a
+     linha estoura e o navegador joga o "a" sozinho na linha seguinte. */
+  .display-xl {
+    font-size: clamp(2.5rem, 7vw, 5.6rem);
+  }
+  .display-lg {
+    font-size: clamp(2rem, 5vw, 3.5rem);
+  }
+
+  .current-text {
+    background: var(--current);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  /* Card com inclinação 3D. O brilho segue a mão via --tilt-px/--tilt-py. */
+  .tilt-card {
+    transform: perspective(1000px) rotateX(var(--tilt-rx, 0deg)) rotateY(var(--tilt-ry, 0deg));
+    transform-style: preserve-3d;
+    transition: transform 0.16s linear;
+  }
+
+  .tilt-card::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.4s var(--ease-out-soft);
+    background: radial-gradient(
+      420px circle at var(--tilt-px, 50%) var(--tilt-py, 50%),
+      rgba(106, 90, 224, 0.16),
+      transparent 62%
+    );
+  }
+
+  .tilt-card:hover::after,
+  .tilt-card:focus-within::after {
+    opacity: 1;
+  }
+
+  /* Barra de navegação. No topo da página ela é uma faixa transparente alinhada
+     à shell; ao rolar, encolhe para uma pílula flutuante e descolada do topo.
+     O container externo mantém a altura de --header-h e centraliza a pílula,
+     então o "descolamento" sai da própria diferença de altura — nada de margem
+     animada empurrando layout. */
+  .nav-pill {
+    width: var(--shell);
+    height: 100%;
+    padding-inline: 0;
+    border: 1px solid transparent;
+    border-radius: 999px;
+    background: transparent;
+    transition:
+      width 0.55s var(--ease-out-soft),
+      height 0.55s var(--ease-out-soft),
+      padding 0.55s var(--ease-out-soft),
+      background-color 0.45s var(--ease-out-soft),
+      border-color 0.45s var(--ease-out-soft),
+      box-shadow 0.45s var(--ease-out-soft),
+      backdrop-filter 0.45s var(--ease-out-soft);
+  }
+
+  /* A largura compensa o padding interno: com 100% - 1.5rem de largura e 0.5rem
+     de padding, o logo e o botão continuam nos mesmos 20px de recuo da shell. */
+  .nav-pill[data-scrolled='true'] {
+    width: min(1100px, 100% - 1.5rem);
+    height: calc(var(--header-h) - 20px);
+    padding-inline: 0.5rem;
+    border-color: var(--color-line);
+    background: color-mix(in oklab, var(--color-ink-100) 78%, transparent);
+    backdrop-filter: blur(18px) saturate(140%);
+    -webkit-backdrop-filter: blur(18px) saturate(140%);
+    box-shadow:
+      0 18px 40px -22px rgba(0, 0, 0, 0.9),
+      inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  }
+
+  @media (min-width: 1024px) {
+    .nav-pill[data-scrolled='true'] {
+      padding-inline: 1.5rem;
+    }
+  }
+
+  /* Menu mobile. `visibility` entra na transição para que o painel fechado não
+     capture cliques nem apareça em transparência parcial. */
+  .mobile-menu {
+    opacity: 0;
+    visibility: hidden;
+    transition:
+      opacity 0.28s var(--ease-out-soft),
+      visibility 0s linear 0.28s;
+  }
+
+  .mobile-menu[data-open='true'] {
+    opacity: 1;
+    visibility: visible;
+    transition:
+      opacity 0.28s var(--ease-out-soft),
+      visibility 0s linear 0s;
+  }
+
+  .mobile-menu-item {
+    opacity: 0;
+    transform: translate3d(0, 12px, 0);
+    transition:
+      opacity 0.4s var(--ease-out-soft),
+      transform 0.4s var(--ease-out-soft);
+  }
+
+  .mobile-menu[data-open='true'] .mobile-menu-item {
+    opacity: 1;
+    transform: none;
+    transition-delay: var(--item-delay, 0ms);
+  }
+
+  /* Painel de acordeão. Animar `grid-template-rows` de 0fr para 1fr é a única
+     forma de transicionar altura automática sem medir o conteúdo em JS. */
+  .accordion-panel {
+    display: grid;
+    grid-template-rows: 0fr;
+    opacity: 0;
+    transition:
+      grid-template-rows 0.45s var(--ease-out-soft),
+      opacity 0.3s var(--ease-out-soft);
+  }
+
+  .accordion-panel[data-open='true'] {
+    grid-template-rows: 1fr;
+    opacity: 1;
+  }
+
+  /* Elemento que se move em parallax. A variável é escrita pelo hook. */
+  .parallax {
+    transform: translate3d(0, var(--parallax-y, 0), 0);
+    will-change: transform;
+  }
+
+  /* Faixa que corre de ponta a ponta, ignorando o container — uma das quebras
+     de grade deliberadas do layout. */
+  .bleed {
+    width: 100vw;
+    margin-inline: calc(50% - 50vw);
+  }
+
+  /* Linha do tempo do processo. O trilho se desenha uma vez, no sentido da
+     leitura, e as etapas entram escalonadas atrás dele.
+     Tudo aqui é escopado por `html.reveal-ready` pela mesma razão do reveal
+     global: sem JS, nada fica escondido. */
+  html.reveal-ready .timeline .timeline-rail-fill {
+    transform: scaleX(0);
+    transform-origin: left center;
+    transition: transform 1.5s var(--ease-out-soft) 0.15s;
+  }
+  html.reveal-ready .timeline .timeline-rail-fill[data-axis='y'] {
+    transform: scaleY(0);
+    transform-origin: center top;
+  }
+  html.reveal-ready .timeline.is-revealed .timeline-rail-fill {
+    transform: scaleX(1);
+  }
+  html.reveal-ready .timeline.is-revealed .timeline-rail-fill[data-axis='y'] {
+    transform: scaleY(1);
+  }
+
+  html.reveal-ready .timeline .timeline-step {
+    opacity: 0;
+    transform: translate3d(0, 20px, 0);
+    transition:
+      opacity 0.7s var(--ease-out-soft),
+      transform 0.7s var(--ease-out-soft);
+    transition-delay: var(--step-delay, 0ms);
+  }
+  html.reveal-ready .timeline.is-revealed .timeline-step {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ==========================================================================
+   Scroll reveal — um único mecanismo para o site todo.
+   O estado inicial só é aplicado quando o JS confirma suporte (classe no <html>),
+   para que o conteúdo nunca fique invisível se o script falhar.
+   ========================================================================== */
+
+html.reveal-ready [data-reveal] {
+  opacity: 0;
+  transform: translate3d(0, 22px, 0);
+  transition:
+    opacity 0.75s var(--ease-out-soft),
+    transform 0.75s var(--ease-out-soft);
+  transition-delay: var(--reveal-delay, 0ms);
+  will-change: opacity, transform;
+}
+
+html.reveal-ready [data-reveal='scale'] {
+  transform: translate3d(0, 22px, 0) scale(0.97);
+}
+
+html.reveal-ready [data-reveal='left'] {
+  transform: translate3d(-26px, 0, 0);
+}
+
+/* Gatilho puro: entra no observador para receber `.is-revealed`, mas não tem
+   animação própria — quem anima são os descendentes. */
+html.reveal-ready [data-reveal='trigger'] {
+  opacity: 1;
+  transform: none;
+  transition: none;
+}
+
+html.reveal-ready [data-reveal].is-revealed {
+  opacity: 1;
+  transform: none;
+  will-change: auto;
+}
+
+/* ==========================================================================
+   Movimento reduzido — fallback estático elegante, não ausência de design.
+   ========================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  html.reveal-ready [data-reveal] {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+
+  /* O grafo não perde o desenho, só o movimento: o WorkflowGraph aplica
+     `.graph.is-static`, que já deixa todas as arestas traçadas, todos os nós
+     acesos e o log de cada etapa impresso. Ver graph.css. */
+}

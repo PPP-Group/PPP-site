@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <title>Engenharia — projeto de exemplo</title>
+    <!--
+      PÁGINA DE EXEMPLO.
+
+      Preview navegável para o modal de portfólio do site da PPP. Linguagem
+      visual propositalmente distinta (clara, serifada, sóbria) para ler como
+      site de cliente.
+
+      Substituir: em src/data/portfolio.js, troque `liveUrl` pela URL real e
+      apague este arquivo.
+    -->
+    <style>
+      *,
+      *::before,
+      *::after { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: Georgia, 'Times New Roman', serif;
+        color: #1a1c1a;
+        background: #fbfaf7;
+        line-height: 1.62;
+      }
+      .wrap { max-width: 940px; margin: 0 auto; padding: 0 24px; }
+      header { border-bottom: 1px solid #e0ded7; background: #fbfaf7; }
+      .bar { display: flex; align-items: center; justify-content: space-between; padding: 18px 0; }
+      .mark { font-size: 17px; letter-spacing: 0.14em; text-transform: uppercase; font-family: system-ui, sans-serif; font-weight: 700; }
+      nav a { margin-left: 22px; color: #4a4d48; text-decoration: none; font-size: 12.5px; font-family: system-ui, sans-serif; letter-spacing: 0.06em; text-transform: uppercase; }
+      nav a:hover { color: #9a5b28; }
+
+      .hero { padding: 66px 0 54px; border-bottom: 1px solid #e0ded7; }
+      .hero p.eyebrow { font-family: system-ui, sans-serif; font-size: 11.5px; letter-spacing: 0.18em; text-transform: uppercase; color: #9a5b28; margin: 0 0 16px; }
+      h1 { font-size: clamp(30px, 5.6vw, 50px); line-height: 1.08; margin: 0; font-weight: 400; letter-spacing: -0.015em; }
+      .hero p.lead { max-width: 54ch; color: #4a4d48; font-size: 17px; margin: 22px 0 28px; }
+      .cta { display: inline-block; background: #1a1c1a; color: #fbfaf7; padding: 13px 26px; text-decoration: none; font-family: system-ui, sans-serif; font-size: 12.5px; letter-spacing: 0.1em; text-transform: uppercase; }
+      .cta:hover { background: #9a5b28; }
+
+      section { padding: 54px 0; border-bottom: 1px solid #e0ded7; }
+      h2 { font-size: 26px; font-weight: 400; margin: 0 0 26px; letter-spacing: -0.01em; }
+      .cols { display: grid; grid-template-columns: repeat(3, 1fr); gap: 26px; }
+      .item h3 { font-size: 17px; margin: 0 0 8px; font-weight: 400; }
+      .item p { margin: 0; color: #55584f; font-size: 14.5px; }
+      .item .num { font-family: system-ui, sans-serif; font-size: 11px; letter-spacing: 0.14em; color: #9a5b28; display: block; margin-bottom: 10px; }
+
+      .works { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
+      figure { margin: 0; }
+      .shot { aspect-ratio: 4 / 3; background: linear-gradient(150deg, #d9d5cb, #b9b3a5); position: relative; }
+      .shot::after { content: ''; position: absolute; inset: 16px; border: 1px solid rgba(255, 255, 255, 0.5); }
+      figcaption { font-family: system-ui, sans-serif; font-size: 12px; letter-spacing: 0.05em; color: #55584f; margin-top: 9px; }
+
+      form { display: grid; gap: 12px; max-width: 460px; }
+      label { font-family: system-ui, sans-serif; font-size: 11.5px; letter-spacing: 0.1em; text-transform: uppercase; color: #55584f; }
+      input, select { padding: 11px 12px; border: 1px solid #d6d3ca; background: #fff; font-family: system-ui, sans-serif; font-size: 14px; }
+      footer { padding: 30px 0 46px; font-family: system-ui, sans-serif; font-size: 12px; color: #7c7f76; }
+
+      @media (max-width: 700px) {
+        .cols, .works { grid-template-columns: 1fr; }
+        nav { display: none; }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="wrap bar">
+        <span class="mark">Engenharia</span>
+        <nav>
+          <a href="#servicos">Serviços</a>
+          <a href="#obras">Obras</a>
+          <a href="#contato">Contato</a>
+        </nav>
+      </div>
+    </header>
+
+    <div class="wrap">
+      <div class="hero">
+        <p class="eyebrow">Projetos e execução</p>
+        <h1>Obras que começam no cálculo e terminam na entrega.</h1>
+        <p class="lead">
+          Projeto estrutural, gerenciamento e execução para obras industriais, comerciais e
+          residenciais de médio porte.
+        </p>
+        <a class="cta" href="#contato">Solicitar orçamento</a>
+      </div>
+
+      <section id="servicos">
+        <h2>Serviços</h2>
+        <div class="cols">
+          <div class="item">
+            <span class="num">01</span>
+            <h3>Projeto estrutural</h3>
+            <p>Cálculo, detalhamento e compatibilização com as demais disciplinas.</p>
+          </div>
+          <div class="item">
+            <span class="num">02</span>
+            <h3>Gerenciamento de obra</h3>
+            <p>Cronograma, medição e controle de custo com relatório quinzenal.</p>
+          </div>
+          <div class="item">
+            <span class="num">03</span>
+            <h3>Execução</h3>
+            <p>Equipe própria para fundação, estrutura e acabamento.</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="obras">
+        <h2>Obras recentes</h2>
+        <div class="works">
+          <figure>
+            <div class="shot"></div>
+            <figcaption>Galpão industrial — 2.400 m²</figcaption>
+          </figure>
+          <figure>
+            <div class="shot"></div>
+            <figcaption>Edifício comercial — 6 pavimentos</figcaption>
+          </figure>
+        </div>
+      </section>
+
+      <section id="contato">
+        <h2>Solicitar orçamento</h2>
+        <form onsubmit="event.preventDefault(); this.reset(); alert('Exemplo — nenhum dado é enviado.');">
+          <div>
+            <label for="nome">Nome</label><br />
+            <input id="nome" name="nome" style="width: 100%" />
+          </div>
+          <div>
+            <label for="tipo">Tipo de obra</label><br />
+            <select id="tipo" name="tipo" style="width: 100%">
+              <option>Industrial</option>
+              <option>Comercial</option>
+              <option>Residencial</option>
+            </select>
+          </div>
+          <div>
+            <label for="porte">Área aproximada</label><br />
+            <input id="porte" name="porte" placeholder="m²" style="width: 100%" />
+          </div>
+          <button class="cta" style="border: 0; cursor: pointer" type="submit">Enviar</button>
+        </form>
+      </section>
+
+      <footer>Página de exemplo — conteúdo fictício, nenhum dado é enviado.</footer>
+    </div>
+  </body>
+</html>
