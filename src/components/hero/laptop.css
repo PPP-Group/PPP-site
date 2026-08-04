@@ -33,10 +33,12 @@
   perspective-origin: 50% 42%;
 
   /* Transform 3D não encolhe a caixa de layout: a base, deitada a 76°, ocupa
-     ~25% da própria altura na tela mas continua reservando 40% de `--lp-w`.
-     Sem esta compensação sobra um vão morto embaixo — que desalinha a
-     centralização vertical e, pior, larga a sombra longe do objeto. */
-  margin-bottom: calc(var(--lp-w) * -0.2);
+     ~24% da própria profundidade na tela mas continua reservando os 63,6% de
+     `--lp-w` inteiros. Sem esta compensação sobra um vão morto embaixo — que
+     desalinha a centralização vertical e, pior, larga a sombra longe do
+     objeto. O vão medido é 0,303 × `--lp-w`; os 0,021 a mais são a folga para
+     a sombra descer um pouco além do objeto. */
+  margin-bottom: calc(var(--lp-w) * -0.324);
 }
 
 /* Flutuação. Fica numa camada própria para não brigar com a rotação do mouse,
@@ -79,7 +81,8 @@
    1. As arestas são RECUADAS por --r em vez de correrem a largura inteira.
       Como a frente e o verso têm cantos arredondados, uma aresta de ponta a
       ponta ultrapassa a curva e aparece como uma aba quadrada saliente. É essa
-      aba que dá o aspecto de bloco.
+      aba que dá o aspecto de bloco. O vão que sobra é fechado pelas facetas de
+      canto, logo abaixo.
 
    2. O gradiente das arestas é cilíndrico (escuro nas bordas, claro no meio).
       Uma faixa de cor chapada lê como corte reto; a banda de luz no meio lê
@@ -88,33 +91,77 @@
 
 .lp-face {
   position: absolute;
-  border-radius: calc(var(--d) / 2);
+  /* Sem arredondar as pontas: a aresta encosta na faceta de canto exatamente
+     no ponto de tangência, e uma ponta em meia-lua abriria entalhe ali. */
+  backface-visibility: hidden;
 }
 
 /* --------------------------------------------------------------------------
-   Fatias de casco — o que fecha os cantos.
+   Facetas de canto — o que fecha as quinas.
 
-   As arestas terminam onde a curva do canto começa, então a região do canto
-   fica sem face nenhuma: um quarto de cilindro que `div` plana não consegue
-   desenhar. Sem isso dá para ver ATRAVÉS do canto.
+   As arestas retas terminam onde a curva do canto começa, então sobra um
+   quarto de cilindro sem face nenhuma. Empilhar planos ao longo da espessura
+   não resolve: duas fatias separadas por Δz se afastam Δz · tan(ângulo) na
+   tela, e com a base deitada a 76° isso é quatro vezes o espaçamento — o canto
+   fica vazado.
 
-   A saída é extrudar por fatiamento: planos opacos com o mesmo contorno
-   arredondado, distribuídos ao longo da espessura. Como são opacos e do
-   tamanho do corpo, cada um oculta o que está atrás — de qualquer ângulo
-   diferente de exatamente de perfil, o canto lê como material sólido com a
-   silhueta certa. Nos trechos retos elas ficam escondidas atrás das arestas.
+   Cada faceta aqui é a geometria certa: um retângulo com a PROFUNDIDADE
+   INTEIRA do corpo, girado em torno do eixo do canto. Não há nada para vazar
+   por entre elas, em ângulo nenhum.
 
-   Recuadas em 0,5px para nunca disputarem o mesmo plano das faces da frente e
-   do verso, o que causaria cintilação de z-fighting.
+   O empilhamento de transforms é lido de fora para dentro:
+
+     rotateZ(--a)      leva a faceta ao azimute dela no arco
+     rotateY(90deg)    põe a normal no plano XY e a largura ao longo de Z
+     translateZ(apo)   empurra até a corda, à distância r·cos(11,25°)
+
+   A origem do transform é o centro do elemento, que left/top/right/bottom +
+   margens negativas colocam exatamente no centro do arco — a (--r, --r) do
+   canto do corpo. Por isso os transforms giram em torno do eixo certo.
+
+   Com --r fixo nos quatro cantos, as pontas das facetas caem justamente nos
+   pontos de tangência onde as arestas retas começam: o corpo fecha sem fresta.
    -------------------------------------------------------------------------- */
-.lp-shell {
+.lp-corner {
+  /* Corda e apótema de um arco de 22,5°: 2·sen(11,25°) e cos(11,25°). */
+  --chord: calc(var(--r) * 0.39018);
+  --apothem: calc(var(--r) * 0.98079);
+
   position: absolute;
-  inset: 0.5px;
-  border-radius: var(--r);
-  background: linear-gradient(170deg, #1a1a28 0%, #101019 58%, #0a0a11 100%);
-  /* z = d/2 − (i + 0,5) · d/5, ou seja 0,4d · 0,2d · 0 · −0,2d · −0,4d.
-     Evita cair exatamente sobre a frente ou o verso. */
-  transform: translateZ(calc(var(--d) * (0.4 - 0.2 * var(--i))));
+  width: var(--d);
+  height: var(--chord);
+  margin: calc(var(--chord) / -2) calc(var(--d) / -2);
+  /* Casco fechado e opaco: o que aponta para o outro lado nunca deveria ser
+     visto, e escondê-lo poupa o navegador de ordenar planos invisíveis. */
+  backface-visibility: hidden;
+  transform: rotateZ(var(--a)) rotateY(90deg) translateZ(var(--apothem));
+  /* Mesmo chanfro cilíndrico das arestas. A largura da faceta corre ao longo
+     da profundidade, e o rotateY inverte o sentido — daí o gradiente espelhado
+     em relação ao de .lp-face-t. */
+  background: linear-gradient(
+    90deg,
+    #0a0a10 0%,
+    #1f1f30 38%,
+    #262639 60%,
+    #0c0c13 100%
+  );
+}
+
+.lp-corner-tl {
+  top: var(--r);
+  left: var(--r);
+}
+.lp-corner-tr {
+  top: var(--r);
+  right: var(--r);
+}
+.lp-corner-br {
+  bottom: var(--r);
+  right: var(--r);
+}
+.lp-corner-bl {
+  bottom: var(--r);
+  left: var(--r);
 }
 
 /* Aresta de cima e de baixo: W de largura, D de profundidade. */
@@ -273,7 +320,10 @@
 
 .lp-deck {
   --w: calc(var(--lp-w) * 1.018);
-  --h: calc(var(--lp-w) * 0.4);
+  /* Mesma pegada da tampa — 16:10 sobre a própria largura. Um notebook fecha:
+     tampa e base têm a mesma planta, e a base só transborda os 1,8% de largura
+     acima. Com profundidade menor que isso a base lê como achatada. */
+  --h: calc(var(--w) * 0.625);
   --d: var(--deck-d);
   --r: calc(var(--lp-w) * 0.026);
 
@@ -286,11 +336,23 @@
   transform-style: preserve-3d;
 }
 
-/* Face de cima: o teclado. */
+/* Face de cima: o teclado.
+
+   Tudo aqui é proporcional a --lp-w. Em pixels fixos o teclado ficava do mesmo
+   tamanho enquanto o notebook crescia para 420px e 460px nos breakpoints
+   maiores — teclas cada vez mais miúdas dentro de uma base cada vez maior. */
 .lp-deck-top {
+  --kb-pad-top: calc(var(--lp-w) * 0.035);
+  --kb-pad-x: calc(var(--lp-w) * 0.045);
+  --key-h: calc(var(--lp-w) * 0.049);
+  --key-gap: calc(var(--lp-w) * 0.0099);
+
   position: absolute;
   inset: 0;
-  padding: 14px 26px;
+  /* Sem padding embaixo: a folga na frente do trackpad é o que sobra da soma
+     das peças, e fica em ~6% da profundidade — a mesma faixa de um notebook
+     real entre o trackpad e a borda da frente. */
+  padding: var(--kb-pad-top) var(--kb-pad-x) 0;
   transform: translateZ(calc(var(--d) / 2));
   backface-visibility: hidden;
   border-radius: var(--r);
@@ -348,19 +410,19 @@
 
 .lp-keys {
   display: grid;
-  gap: 4px;
+  gap: var(--key-gap);
 }
 
 .lp-keyrow {
   display: flex;
-  gap: 4px;
+  gap: var(--key-gap);
   justify-content: center;
 }
 
 .lp-key {
-  height: 9px;
+  height: var(--key-h);
   flex: 1;
-  border-radius: 2px;
+  border-radius: calc(var(--lp-w) * 0.006);
   background: #1e1e2b;
   box-shadow: inset 0 -1px 0 rgba(0, 0, 0, 0.6);
 }
@@ -369,11 +431,16 @@
   flex: 5;
 }
 
+/* Altura em --lp-w, não em porcentagem: porcentagem resolveria contra a caixa
+   de conteúdo, que já depende do padding — mexer no padding mexeria no
+   trackpad junto. A largura fica em % porque aí a referência é justamente a
+   largura útil entre as teclas. Proporções de notebook real: ~41% da largura
+   da base, ~38% da profundidade. */
 .lp-pad {
-  width: 34%;
-  height: 30%;
-  margin: 12px auto 0;
-  border-radius: 5px;
+  width: 45%;
+  height: calc(var(--lp-w) * 0.24);
+  margin: calc(var(--lp-w) * 0.032) auto 0;
+  border-radius: calc(var(--lp-w) * 0.014);
   background: #14141d;
   border: 1px solid #22222f;
 }
@@ -383,13 +450,17 @@
    ========================================================================== */
 
 /* Vive fora do contexto 3D para não girar junto. Ancorada pelo topo, não pelo
-   rodapé da cena: a base termina a ~0,83 × `--lp-w` do topo, bem antes do fim
-   da caixa de layout. Presa ao rodapé, a sombra ficava longe do objeto. */
+   rodapé da cena: a base termina a ~0,96 × `--lp-w` do topo, bem antes do fim
+   da caixa de layout. Presa ao rodapé, a sombra ficava longe do objeto.
+
+   O centro fica ~10px acima da borda da frente da base, e a largura em ~0,76
+   da silhueta projetada: perto o bastante para ler como contato com a mesa,
+   estreita o bastante para não escapar por baixo do objeto. */
 .lp-shadow {
   position: absolute;
-  top: calc(var(--lp-w) * 0.78);
+  top: calc(var(--lp-w) * 0.89);
   left: 50%;
-  width: calc(var(--lp-w) * 0.92);
+  width: calc(var(--lp-w) * 0.97);
   height: 34px;
   transform: translateX(-50%);
   border-radius: 50%;

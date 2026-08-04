@@ -286,8 +286,12 @@
     padding-inline: 0.5rem;
     border-color: var(--color-line);
     background: color-mix(in oklab, var(--color-ink-100) 78%, transparent);
+    /* Sem -webkit-backdrop-filter escrito à mão: com as duas propriedades e o
+       mesmo valor lado a lado, o minificador (Lightning CSS, via
+       @tailwindcss/vite) as trata como duplicatas e descarta a versão sem
+       prefixo — a que Chrome e Firefox exigem — sobrando só a prefixada. O
+       build passa a autoprefixar sozinho a partir daqui. */
     backdrop-filter: blur(18px) saturate(140%);
-    -webkit-backdrop-filter: blur(18px) saturate(140%);
     box-shadow:
       0 18px 40px -22px rgba(0, 0, 0, 0.9),
       inset 0 1px 0 rgba(255, 255, 255, 0.05);

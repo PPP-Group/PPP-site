@@ -22,9 +22,29 @@ const PANEL = {
 const RX_MIN = -26;
 const RX_MAX = 16;
 
-/* Fatias de casco por corpo. Fecham a região do canto, que as arestas retas
-   não alcançam. Cinco bastam: sendo opacas, cada uma oculta a de trás. */
-const SHELL_SLICES = [0, 1, 2, 3, 4];
+/* Cantos. A região do canto é um quarto de cilindro que as arestas retas não
+   alcançam, e planos empilhados na profundidade não a fecham: duas fatias
+   separadas por Δz se afastam Δz · tan(ângulo) na tela, e a base deitada a 76°
+   multiplica isso por quatro — dava para ver através do canto.
+
+   Aqui o canto é geometria de verdade: facetas planas giradas em torno do eixo
+   do próprio canto, cada uma com a profundidade inteira do corpo. Quatro por
+   canto (22,5° cada) deixam um degrau de 0,02 × raio, invisível, e fecham o
+   corpo em qualquer ângulo. */
+const CORNER_FACETS = 4;
+const CORNER_STEP = 90 / CORNER_FACETS;
+
+/* Azimute inicial de cada canto, com +X à direita e +Y para baixo (convenção
+   do CSS), girando de +X para +Y. */
+const CORNER_BASE = { tl: 180, tr: 270, br: 0, bl: 90 };
+
+const SHELL = Object.entries(CORNER_BASE).flatMap(([corner, base]) =>
+  Array.from({ length: CORNER_FACETS }, (_, k) => ({
+    id: `${corner}${k}`,
+    corner,
+    angle: base + CORNER_STEP * (k + 0.5),
+  })),
+);
 
 /* Quanto o ponteiro sozinho inclina o objeto, sem arrastar. */
 const FOLLOW_RY = 13;
@@ -254,8 +274,12 @@ export function Laptop3D({ className = '' }) {
               </svg>
             </div>
 
-            {SHELL_SLICES.map((i) => (
-              <span key={i} className="lp-shell" style={{ '--i': i }} />
+            {SHELL.map(({ id, corner, angle }) => (
+              <span
+                key={id}
+                className={`lp-corner lp-corner-${corner}`}
+                style={{ '--a': `${angle}deg` }}
+              />
             ))}
 
             <span className="lp-face lp-face-t" />
@@ -292,8 +316,12 @@ export function Laptop3D({ className = '' }) {
               <span className="lp-foot" />
             </div>
 
-            {SHELL_SLICES.map((i) => (
-              <span key={i} className="lp-shell" style={{ '--i': i }} />
+            {SHELL.map(({ id, corner, angle }) => (
+              <span
+                key={id}
+                className={`lp-corner lp-corner-${corner}`}
+                style={{ '--a': `${angle}deg` }}
+              />
             ))}
 
             <span className="lp-face lp-face-t" />
