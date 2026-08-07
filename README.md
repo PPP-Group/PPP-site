@@ -3,6 +3,11 @@
 Site de página única em React + Vite + Tailwind v4. Dark mode, grafo de
 automação animado, portfólio com preview navegável em modal.
 
+> **Identidade de marca, paleta, tipografia e tom de voz:**
+> [`docs/identidade.md`](docs/identidade.md). Este README cobre build, execução
+> e as armadilhas técnicas; a identidade e o porquê das decisões visuais moram
+> lá.
+
 ## Rodar
 
 ```bash
